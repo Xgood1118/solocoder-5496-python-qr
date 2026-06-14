@@ -1,0 +1,12 @@
+Flask==3.0.0
+Flask-Cors==4.0.0
+flask-socketio==5.3.6
+qrcode==7.4.2
+Pillow==10.2.0
+pyzbar==0.1.9
+opencv-python-headless==4.9.0.80
+numpy==1.26.3
+reportlab==4.0.9
+pycryptodome==3.19.1
+python-dotenv==1.0.0
+eventlet==0.35.2
