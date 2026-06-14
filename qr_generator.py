@@ -1,4 +1,5 @@
 import io
+import base64
 import qrcode
 from qrcode.constants import ERROR_CORRECT_L, ERROR_CORRECT_M, ERROR_CORRECT_Q, ERROR_CORRECT_H
 from PIL import Image, ImageDraw, ImageFilter
@@ -329,6 +330,37 @@ def _add_visible_watermark(img: Image.Image, text: str) -> Image.Image:
     
     return img
 
+def _logo_to_svg_inline(logo: Image.Image, img_size: int, logo_ratio: float = 0.2) -> str:
+    if logo.mode != 'RGBA':
+        logo = logo.convert('RGBA')
+    
+    logo_w, logo_h = logo.size
+    max_logo_area = img_size * img_size * logo_ratio
+    scale = min(1.0, (max_logo_area / (logo_w * logo_h)) ** 0.5)
+    new_logo_w = int(logo_w * scale)
+    new_logo_h = int(logo_h * scale)
+    
+    logo_resized = logo.resize((new_logo_w, new_logo_h), Image.LANCZOS)
+    
+    buf = io.BytesIO()
+    logo_resized.save(buf, format='PNG')
+    logo_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    
+    pos_x = (img_size - new_logo_w) // 2
+    pos_y = (img_size - new_logo_h) // 2
+    
+    pad = 4
+    bg_x = pos_x - pad
+    bg_y = pos_y - pad
+    bg_w = new_logo_w + 2 * pad
+    bg_h = new_logo_h + 2 * pad
+    
+    parts = [
+        f'<rect x="{bg_x}" y="{bg_y}" width="{bg_w}" height="{bg_h}" fill="white" rx="4"/>',
+        f'<image x="{pos_x}" y="{pos_y}" width="{new_logo_w}" height="{new_logo_h}" xlink:href="data:image/png;base64,{logo_b64}"/>',
+    ]
+    return '\n'.join(parts)
+
 def pil_to_png_bytes(img: Image.Image) -> bytes:
     buf = io.BytesIO()
     img.save(buf, format='PNG')
@@ -336,7 +368,8 @@ def pil_to_png_bytes(img: Image.Image) -> bytes:
 
 def generate_svg(content: str, error_correction: str = 'M', box_size: int = 10,
                  border: int = 4, fg_color: str = '#000000', bg_color: str = '#FFFFFF',
-                 transparent_bg: bool = False, logo_image: Image.Image = None) -> str:
+                 transparent_bg: bool = False, logo_image: Image.Image = None,
+                 logo_ratio: float = 0.2) -> str:
     
     has_logo = logo_image is not None
     error_level = _get_error_level(error_correction, has_logo)
@@ -354,11 +387,9 @@ def generate_svg(content: str, error_correction: str = 'M', box_size: int = 10,
     size = len(matrix)
     img_size = size * box_size
     
-    bg_fill = 'none' if transparent_bg else bg_color
-    
     svg_parts = [
         f'<?xml version="1.0" encoding="UTF-8"?>',
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {img_size} {img_size}" width="{img_size}" height="{img_size}">',
+        f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {img_size} {img_size}" width="{img_size}" height="{img_size}">',
     ]
     
     if not transparent_bg:
@@ -374,6 +405,11 @@ def generate_svg(content: str, error_correction: str = 'M', box_size: int = 10,
                 svg_parts.append(f'<rect x="{x}" y="{y}" width="{box_size}" height="{box_size}"/>')
     
     svg_parts.append('</g>')
+    
+    if has_logo:
+        logo_svg = _logo_to_svg_inline(logo_image, img_size, logo_ratio)
+        svg_parts.append(logo_svg)
+    
     svg_parts.append('</svg>')
     
     return '\n'.join(svg_parts)

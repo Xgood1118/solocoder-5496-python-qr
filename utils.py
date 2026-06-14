@@ -63,6 +63,30 @@ def generate_vcard_content(fn: str, org: str = '', title: str = '', phone: str =
     lines.append('END:VCARD')
     return '\n'.join(lines)
 
+def generate_mecard_content(name: str = '', phone: str = '', email: str = '',
+                            url: str = '', org: str = '', title: str = '',
+                            address: str = '', note: str = '') -> str:
+    parts = []
+    if name:
+        parts.append(f'N:{name}')
+    if phone:
+        parts.append(f'TEL:{phone}')
+    if email:
+        parts.append(f'EMAIL:{email}')
+    if url:
+        parts.append(f'URL:{url}')
+    if org:
+        parts.append(f'ORG:{org}')
+    if title:
+        parts.append(f'TITLE:{title}')
+    if address:
+        parts.append(f'ADR:{address}')
+    if note:
+        parts.append(f'NOTE:{note}')
+    if not parts:
+        return ''
+    return 'MECARD:' + ';'.join(parts) + ';;'
+
 def validate_hex_color(color: str) -> bool:
     if not color:
         return False

@@ -18,7 +18,7 @@ def batch_generate_png(items: List[Dict[str, Any]], default_options: Dict = None
             options = dict(default_options or {})
             options.update(item.get('options', {}))
             
-            filename = item.get('filename', f'qr_{idx + 1}.png')
+            filename = item.get('filename') or f'qr_{idx + 1}.png'
             if not filename.endswith('.png'):
                 filename += '.png'
             
@@ -61,7 +61,7 @@ def batch_generate_svg(items: List[Dict[str, Any]], default_options: Dict = None
             options = dict(default_options or {})
             options.update(item.get('options', {}))
             
-            filename = item.get('filename', f'qr_{idx + 1}.svg')
+            filename = item.get('filename') or f'qr_{idx + 1}.svg'
             if not filename.endswith('.svg'):
                 filename += '.svg'
             

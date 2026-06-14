@@ -13,8 +13,8 @@ from PIL import Image
 from config import Config
 from utils import (
     get_content_hash, is_url, is_wifi_content, parse_wifi_content,
-    generate_wifi_content, generate_vcard_content, validate_hex_color,
-    get_client_ip, timestamp_now, format_timestamp
+    generate_wifi_content, generate_vcard_content, generate_mecard_content,
+    validate_hex_color, get_client_ip, timestamp_now, format_timestamp
 )
 from qr_generator import (
     generate_qr_pil, pil_to_png_bytes, generate_svg, generate_pdf,
@@ -103,6 +103,19 @@ def generate_qr():
             url=data.get('url', ''),
             note=data.get('note', ''),
         )
+    elif content_type == 'mecard':
+        content = generate_mecard_content(
+            name=data.get('name', ''),
+            phone=data.get('phone', ''),
+            email=data.get('email', ''),
+            url=data.get('url', ''),
+            org=data.get('org', ''),
+            title=data.get('title', ''),
+            address=data.get('address', ''),
+            note=data.get('note', ''),
+        )
+        if not content:
+            return jsonify({'error': 'at least one mecard field is required'}), 400
     elif content_type == 'encrypted':
         secret = data.get('secret', '')
         if not secret:
@@ -213,6 +226,7 @@ def generate_qr():
             bg_color=bg_color,
             transparent_bg=transparent_bg,
             logo_image=logo_image,
+            logo_ratio=logo_ratio,
         )
         
         if stats_db:
@@ -312,7 +326,7 @@ def batch_generate_qr():
         
         processed_items.append({
             'content': content,
-            'filename': item.get('filename', ''),
+            'filename': item.get('filename') or '',
             'options': item_options,
         })
     
